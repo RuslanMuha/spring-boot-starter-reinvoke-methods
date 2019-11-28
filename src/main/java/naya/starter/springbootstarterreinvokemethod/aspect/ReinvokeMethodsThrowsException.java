@@ -7,14 +7,12 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.aspectj.lang.reflect.MethodSignature;
 
 
 @Aspect
 @Slf4j
 public class ReinvokeMethodsThrowsException {
 
-    private static int count = 1;
 
     @Pointcut("@annotation(naya.starter.springbootstarterreinvokemethod.TryToRunAfterThrowing)")
     public void afterThrowingTryToRun() {
@@ -28,27 +26,22 @@ public class ReinvokeMethodsThrowsException {
     @SneakyThrows
     @Around("afterThrowingTryToRun() &&AfterThrowingTryToRunValues(param)")
     public Object around(ProceedingJoinPoint joinPoint, TryToRunAfterThrowing param) {
+        int currentTry = 0;
+        Throwable throwable = new Throwable();
+        while (currentTry < param.numberTries()) {
+            try {
+                return joinPoint.proceed();
+            } catch (Throwable e) {
+                throwable = e;
+                currentTry++;
 
-        Object result;
-        try {
-           result = joinPoint.proceed();
-        } catch (Exception e) {
-            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-            Object[] args = joinPoint.getArgs();
-            if (count <= param.numberTries()) {
-                Thread.sleep(param.delay());
-                ++count;
-                result = signature.getMethod().invoke(joinPoint.getThis(), args);
-            } else {
-                count=0;
-                throw e;
+                if (currentTry < param.numberTries()) {
+                    Thread.sleep(param.delay());
+                }
+
             }
 
         }
-        count = 0;
-        System.out.println(count+ " count proxy");
-        return result;
+        throw throwable;
     }
-
-
 }
