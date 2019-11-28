@@ -28,6 +28,7 @@ public class ReinvokeMethodsThrowsException {
     @SneakyThrows
     @Around("afterThrowingTryToRun() &&AfterThrowingTryToRunValues(param)")
     public Object around(ProceedingJoinPoint joinPoint, TryToRunAfterThrowing param) {
+
         Object result;
         try {
            result = joinPoint.proceed();
@@ -39,11 +40,13 @@ public class ReinvokeMethodsThrowsException {
                 ++count;
                 result = signature.getMethod().invoke(joinPoint.getThis(), args);
             } else {
+                count=0;
                 throw e;
             }
 
         }
         count = 0;
+        System.out.println(count+ " count proxy");
         return result;
     }
 
